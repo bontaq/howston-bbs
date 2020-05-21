@@ -47,6 +47,23 @@ executable howston-exe
       base >=4.7 && <5
     , howston
     , brick
+    , vty
+    , text
+    , microlens
+    , microlens-th
+  default-language: Haskell2010
+
+executable howston-server
+  main-is: Main.hs
+  other-modules:
+      Paths_howston
+  hs-source-dirs:
+      server
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >= 4.7 && < 5
+    , howston
+    , brick
   default-language: Haskell2010
 
 test-suite howston-test
