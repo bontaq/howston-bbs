@@ -51,6 +51,7 @@ executable howston-exe
     , text
     , microlens
     , microlens-th
+    , wreq
   default-language: Haskell2010
 
 executable howston-server

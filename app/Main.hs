@@ -1,8 +1,11 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
 import qualified Data.Text as T
+
 import Brick
 import Brick.Forms
 import Brick.Focus
@@ -12,16 +15,23 @@ import Brick.Widgets.Border as B
 import Graphics.Vty as V
 
 import Lens.Micro.TH
+import Network.Wreq
 
 import Lib
 
 data User = NameField
           | PasswordField
+          | LoginField
+          | RegisterField
           deriving (Eq, Ord, Show)
+
+data Action = Login | Register
+              deriving (Eq, Show)
 
 data UserInfo = UserInfo {
   _name :: T.Text
   , _password :: T.Text
+  , _action :: Action
   }
 
 makeLenses ''UserInfo
@@ -33,14 +43,18 @@ mkForm =
   in newForm [
     label "Name" @@= editTextField name NameField (Just 1)
     , label "Password" @@= editTextField password PasswordField (Just 2)
+    , hCenter @@= radioField action
+       [ (Login, LoginField, "Login")
+       , (Register, RegisterField, "Register") ]
     ]
 
 globalDefault = V.green `on` V.rgbColor 255 255 204
 
+
 theMap :: AttrMap
 theMap = attrMap globalDefault
-  [ (E.editAttr, V.green `on` V.white)
-  , (E.editFocusedAttr, V.green `on` V.white) ]
+  [ (E.editAttr, V.rgbColor 0 153 153 `on` V.rgbColor 255 255 255)
+  , (E.editFocusedAttr, V.rgbColor 0 153 153 `on` V.rgbColor 255 255 255) ]
 
 draw :: Form UserInfo e User -> [Widget User]
 draw f = [C.vCenter $ C.hCenter form]
@@ -51,7 +65,10 @@ draw f = [C.vCenter $ C.hCenter form]
 handleEvent s ev = case ev of
   VtyEvent (V.EvResize {}) -> continue s
   VtyEvent (V.EvKey V.KEsc []) -> halt s
-  -- VtyEvent (V.EvKey V.KEnter [])
+  VtyEvent (V.EvKey V.KEnter []) -> do
+    -- pure $ putStrLn $ (\(Form s _ _ -> show s) s
+    -- post to login
+    continue s
   _ -> do
     s' <- handleFormEvent ev s
     continue s'
@@ -68,13 +85,14 @@ main :: IO ()
 main = do
   let buildVty = do
         v <- V.mkVty =<< V.standardIOConfig
-        let v16Color = v { outputIface = (V.outputIface v) { contextColorCount = 16}}
-        -- V.setMode (V.outputIface v) V.Mouse True
+        V.setMode (V.outputIface v) V.Mouse True
+        let v16Color = v { outputIface = (V.outputIface v) { contextColorCount = 16 } }
         pure v16Color
 
       initialUserInfo = UserInfo {
         _name = ""
         , _password = ""
+        , _action = Login
         }
 
       f = mkForm initialUserInfo
