@@ -29,21 +29,24 @@ makeLenses ''UserInfo
 mkForm :: UserInfo -> Form UserInfo e User
 mkForm =
   let label s w = padBottom (Pad 1) $
-        (vLimit 1 $ hLimit 50 $ str s <+> fill ' ' <+> w)
+        (vLimit 1 $ hLimit 50 $ str s <+> fill ' ' <+> (hLimit 25 $ w))
   in newForm [
     label "Name" @@= editTextField name NameField (Just 1)
     , label "Password" @@= editTextField password PasswordField (Just 2)
     ]
 
+globalDefault = V.green `on` V.rgbColor 255 255 204
+
 theMap :: AttrMap
-theMap = attrMap V.defAttr
-  [ (E.editAttr, V.white `on` V.black)
-  , (E.editFocusedAttr, V.black `on` V.yellow) ]
+theMap = attrMap globalDefault
+  [ (E.editAttr, V.green `on` V.white)
+  , (E.editFocusedAttr, V.green `on` V.white) ]
 
 draw :: Form UserInfo e User -> [Widget User]
 draw f = [C.vCenter $ C.hCenter form]
   where
-    form = B.border $ padTop (Pad 1) $ hLimit 50 $ renderForm f
+    form = B.borderWithLabel (str "Welcome to Howston BBS") $
+      padTop (Pad 1) $ hLimit 50 $ renderForm f
 
 handleEvent s ev = case ev of
   VtyEvent (V.EvResize {}) -> continue s
@@ -65,8 +68,9 @@ main :: IO ()
 main = do
   let buildVty = do
         v <- V.mkVty =<< V.standardIOConfig
-        V.setMode (V.outputIface v) V.Mouse True
-        pure v
+        let v16Color = v { outputIface = (V.outputIface v) { contextColorCount = 16}}
+        -- V.setMode (V.outputIface v) V.Mouse True
+        pure v16Color
 
       initialUserInfo = UserInfo {
         _name = ""
