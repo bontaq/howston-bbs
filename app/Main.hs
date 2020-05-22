@@ -14,9 +14,11 @@ import Brick.Widgets.Center as C
 import Brick.Widgets.Border as B
 import Graphics.Vty as V
 
+import Lens.Micro
 import Lens.Micro.TH
 import Network.Wreq
-
+import Control.Monad.IO.Class (liftIO)
+import Control.Concurrent (forkIO)
 import Lib
 
 data User = NameField
@@ -43,13 +45,12 @@ mkForm =
   in newForm [
     label "Name" @@= editTextField name NameField (Just 1)
     , label "Password" @@= editTextField password PasswordField (Just 2)
-    , hCenter @@= radioField action
-       [ (Login, LoginField, "Login")
+    , (padTop (Pad 1) . hCenter) @@= setFieldConcat hBox . radioField action
+       [ (Login, LoginField, "Login         ")
        , (Register, RegisterField, "Register") ]
     ]
 
 globalDefault = V.green `on` V.rgbColor 255 255 204
-
 
 theMap :: AttrMap
 theMap = attrMap globalDefault
@@ -60,14 +61,18 @@ draw :: Form UserInfo e User -> [Widget User]
 draw f = [C.vCenter $ C.hCenter form]
   where
     form = B.borderWithLabel (str "Welcome to Howston BBS") $
-      padTop (Pad 1) $ hLimit 50 $ renderForm f
+      padTop (Pad 2) $ padAll 1 $ hLimit 50 $ renderForm f
+
+postLogin = do
+  let opts = defaults & param "foo" .~ ["bar"]
+  postWith opts "http://localhost:3000/login" ["h" := ("h" :: String)]
+  pure ()
 
 handleEvent s ev = case ev of
   VtyEvent (V.EvResize {}) -> continue s
   VtyEvent (V.EvKey V.KEsc []) -> halt s
   VtyEvent (V.EvKey V.KEnter []) -> do
-    -- pure $ putStrLn $ (\(Form s _ _ -> show s) s
-    -- post to login
+    liftIO $ forkIO postLogin
     continue s
   _ -> do
     s' <- handleFormEvent ev s
