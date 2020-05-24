@@ -14,3 +14,4 @@ data LoginRequest = LoginRequest {
   } deriving (Show, Generic)
 
 instance ToJSON LoginRequest
+instance FromJSON LoginRequest
