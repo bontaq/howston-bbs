@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Main where
 
 import qualified Data.Text as T
@@ -19,13 +20,15 @@ import Lens.Micro.TH
 import Network.Wreq
 import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent (forkIO)
-import Lib
+import Data.Aeson (toJSON)
+import qualified Lib as L
 
 data User = NameField
           | PasswordField
           | LoginField
           | RegisterField
           deriving (Eq, Ord, Show)
+
 
 data Action = Login | Register
               deriving (Eq, Show)
@@ -65,9 +68,9 @@ draw f = [C.vCenter $ C.hCenter form]
 
 postLogin :: UserInfo -> IO ()
 postLogin s = do
-  let opts = defaults -- & param "foo" .~ ["bar"]
-  postWith opts "http://localhost:3000/login" [ "username" := (s ^. name)
-                                              , "password" := (s ^. password) ]
+  let loginRequest = L.LoginRequest (s ^. name) (s ^. password)
+  -- let opts = defaults & param "Content-Type" .~ ["application/json"]
+  post "http://localhost:3000/login" (toJSON loginRequest)
   pure ()
 
 handleEvent ::
