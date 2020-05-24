@@ -65,6 +65,7 @@ executable howston-server
       base >= 4.7 && < 5
     , howston
     , scotty
+    , aeson
   default-language: Haskell2010
 
 test-suite howston-test

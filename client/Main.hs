@@ -63,16 +63,22 @@ draw f = [C.vCenter $ C.hCenter form]
     form = B.borderWithLabel (str "Welcome to Howston BBS") $
       padTop (Pad 2) $ padAll 1 $ hLimit 50 $ renderForm f
 
-postLogin = do
-  let opts = defaults & param "foo" .~ ["bar"]
-  postWith opts "http://localhost:3000/login" ["h" := ("h" :: String)]
+postLogin :: UserInfo -> IO ()
+postLogin s = do
+  let opts = defaults -- & param "foo" .~ ["bar"]
+  postWith opts "http://localhost:3000/login" [ "username" := (s ^. name)
+                                              , "password" := (s ^. password) ]
   pure ()
 
+handleEvent ::
+  Eq n =>
+  Form UserInfo e n
+  -> BrickEvent n e -> EventM n (Next (Form UserInfo e n))
 handleEvent s ev = case ev of
   VtyEvent (V.EvResize {}) -> continue s
   VtyEvent (V.EvKey V.KEsc []) -> halt s
   VtyEvent (V.EvKey V.KEnter []) -> do
-    liftIO $ forkIO postLogin
+    liftIO $ postLogin (formState s)
     continue s
   _ -> do
     s' <- handleFormEvent ev s
