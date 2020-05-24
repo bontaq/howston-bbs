@@ -67,10 +67,15 @@ draw f = [C.vCenter $ C.hCenter form]
       padTop (Pad 2) $ padAll 1 $ hLimit 50 $ renderForm f
 
 postLogin :: UserInfo -> IO ()
-postLogin s = do
-  let loginRequest = Lib.LoginRequest (s ^. name) (s ^. password)
+postLogin state = do
+  let
+    endpoint = case state ^. action of
+      Login    -> "http://localhost:3000/login"
+      Register -> "http://localhost:3000/register"
+    loginRequest = Lib.LoginRequest (state ^. name) (state ^. password)
+
   -- let opts = defaults & param "Content-Type" .~ ["application/json"]
-  post "http://localhost:3000/login" (toJSON loginRequest)
+  post endpoint (toJSON loginRequest)
   pure ()
 
 handleEvent ::

@@ -15,5 +15,10 @@ main = do
   scotty 3000 $ do
     post "/login" $ do
       loginRequest <- jsonData :: ActionM Lib.LoginRequest
-      liftIO $ putStrLn $ show loginRequest
+      liftIO $ putStrLn $ "Login: " <> show loginRequest
       json loginRequest
+
+    post "/register" $ do
+      registerRequest <- jsonData :: ActionM Lib.LoginRequest
+      liftIO $ putStrLn $ "Register: " <> show registerRequest
+      json registerRequest
