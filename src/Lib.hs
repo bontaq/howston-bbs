@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 module Lib (LoginRequest(..) ) where
 
 import GHC.Generics

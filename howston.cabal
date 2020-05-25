@@ -69,6 +69,7 @@ executable howston-server
     , howston
     , scotty
     , aeson
+    , polysemy
   default-language: Haskell2010
 
 test-suite howston-test
