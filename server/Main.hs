@@ -12,7 +12,9 @@ import Data.Aeson (FromJSON, ToJSON)
 import Control.Monad.IO.Class (liftIO)
 import qualified Lib
 
+import Database.PostgreSQL.Simple
 import Polysemy
+import Polysemy.Input
 
 data Persist m a where
   GetUser :: String -> Persist m ()
@@ -20,12 +22,28 @@ data Persist m a where
 
 makeSem ''Persist
 
-checkUser :: Member Persist r => Sem r ()
-checkUser = undefined
+checkUser :: Member Persist r => String -> Sem r ()
+checkUser username = getUser username
 
-registerUser :: Member Persist r => Sem r ()
-registerUser = undefined
+-- registerUser :: Member Persist r => Sem r ()
+-- registerUser = undefined
 
+runPersistAsPostgres :: Member (Embed IO) r
+                       => Sem (Persist : r) a
+                       -> Sem (Input Connection : r) a
+runPersistAsPostgres = reinterpret $ \case
+  GetUser username -> do
+    conn <- input
+    result <- embed (query_ conn "select 2 + 2" :: IO [Only Int])
+    return ()
+
+runLoginUser :: String -> String -> IO ()
+runLoginUser username password = do
+  conn <- connectPostgreSQL ""
+  runM
+    . runInputConst conn
+    . runPersistAsPostgres
+    $ checkUser username
 
 main = do
   putStrLn "Firing up server"
