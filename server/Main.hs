@@ -17,12 +17,12 @@ import Polysemy
 import Polysemy.Input
 
 data Persist m a where
-  GetUser :: String -> Persist m ()
+  GetUser :: String -> Persist m [Only Int]
   SaveUser :: Lib.LoginRequest -> Persist m ()
 
 makeSem ''Persist
 
-checkUser :: Member Persist r => String -> Sem r ()
+checkUser :: Member Persist r => String -> Sem r [Only Int]
 checkUser username = getUser username
 
 -- registerUser :: Member Persist r => Sem r ()
@@ -35,11 +35,11 @@ runPersistAsPostgres = reinterpret $ \case
   GetUser username -> do
     conn <- input
     result <- embed (query_ conn "select 2 + 2" :: IO [Only Int])
-    return ()
+    return result
 
-runLoginUser :: String -> String -> IO ()
+runLoginUser :: String -> String -> IO [Only Int]
 runLoginUser username password = do
-  conn <- connectPostgreSQL ""
+  conn <- connectPostgreSQL "dbname=howston"
   runM
     . runInputConst conn
     . runPersistAsPostgres
@@ -52,6 +52,7 @@ main = do
     post "/login" $ do
       loginRequest <- jsonData :: ActionM Lib.LoginRequest
       liftIO $ putStrLn $ "Login: " <> show loginRequest
+      liftIO $ putStrLn . show =<< runLoginUser "" ""
       json loginRequest
 
     post "/register" $ do
