@@ -40,9 +40,13 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 # extra-deps: []
-
+#
 # Override default flag values for local packages and extra-deps
 # flags: {}
+
+extra-deps:
+  - rivet-adaptor-postgresql-0.1.0.0@sha256:1d99b30d46c4ed6869b5c9f19e78a93dda6af74d0a198975b45aea4eb7884c60
+  - rivet-core-0.2.0.0@sha256:eaffea0ef7911ed38308146d76d23b4544fd140d31ccafe6c072ead8daa8fead
 
 # Extra package databases containing global packages
 # extra-package-dbs: []

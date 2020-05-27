@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE LambdaCase, BlockArguments #-}
 {-# LANGUAGE GADTs, FlexibleContexts, TypeOperators, DataKinds, PolyKinds #-}
@@ -16,17 +17,19 @@ import Database.PostgreSQL.Simple
 import Polysemy
 import Polysemy.Input
 
+data User = User {
+  name :: String
+  , password :: String
+  } deriving (Show, Generic, FromRow)
+
 data Persist m a where
-  GetUser :: String -> Persist m [Only Int]
-  SaveUser :: Lib.LoginRequest -> Persist m ()
+  GetUser :: String -> Persist m [User]
+  SaveUser :: User -> Persist m ()
 
 makeSem ''Persist
 
-checkUser :: Member Persist r => String -> Sem r [Only Int]
+checkUser :: Member Persist r => String -> Sem r [User]
 checkUser username = getUser username
-
--- registerUser :: Member Persist r => Sem r ()
--- registerUser = undefined
 
 runPersistAsPostgres :: Member (Embed IO) r
                        => Sem (Persist : r) a
@@ -34,10 +37,12 @@ runPersistAsPostgres :: Member (Embed IO) r
 runPersistAsPostgres = reinterpret $ \case
   GetUser username -> do
     conn <- input
-    result <- embed (query_ conn "select 2 + 2" :: IO [Only Int])
+    result <- embed
+      (query conn
+       "SELECT * FROM users WHERE username = ?" (Only username) :: IO [User])
     return result
 
-runLoginUser :: String -> String -> IO [Only Int]
+runLoginUser :: String -> String -> IO [User]
 runLoginUser username password = do
   conn <- connectPostgreSQL "dbname=howston"
   runM
