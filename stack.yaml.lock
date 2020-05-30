@@ -3,7 +3,21 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: rivet-adaptor-postgresql-0.1.0.0@sha256:1d99b30d46c4ed6869b5c9f19e78a93dda6af74d0a198975b45aea4eb7884c60,1167
+    pantry-tree:
+      size: 249
+      sha256: b4d6d3998d4ad73a3276fb40e74bbd7ed6bf97f91f2166d10190a56efc9288fc
+  original:
+    hackage: rivet-adaptor-postgresql-0.1.0.0@sha256:1d99b30d46c4ed6869b5c9f19e78a93dda6af74d0a198975b45aea4eb7884c60
+- completed:
+    hackage: rivet-core-0.2.0.0@sha256:eaffea0ef7911ed38308146d76d23b4544fd140d31ccafe6c072ead8daa8fead,1110
+    pantry-tree:
+      size: 399
+      sha256: 882ffb898af6b3a87eb231197157b346f96f6c4eea9ba25635914eb8c05b0209
+  original:
+    hackage: rivet-core-0.2.0.0@sha256:eaffea0ef7911ed38308146d76d23b4544fd140d31ccafe6c072ead8daa8fead
 snapshots:
 - completed:
     size: 523884
