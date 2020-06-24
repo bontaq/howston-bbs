@@ -1,5 +1,9 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import GHC.Generics
 import Text.Trifecta.Parser
 import Text.Trifecta.Result
 import Text.Parser.Char
@@ -7,6 +11,7 @@ import Text.Parser.Combinators
 import System.Directory
 import Data.List
 import Control.Monad
+import Database.PostgreSQL.Simple
 
 type Up = String
 type Down = String
@@ -56,6 +61,10 @@ readMigration migration =
 readMigrations :: [Migration] -> IO [String]
 readMigrations = mapM readMigration
 
+data MigrationRow = MigrationRow {
+  id :: String
+  } deriving (Show, Generic, FromRow)
+
 main = do
   -- collect migrations
   fileNames <- toAbsolutes =<< listDirectory "./migrations"
@@ -68,6 +77,9 @@ main = do
   let parsedMigrations = parseMigrations readMigrations
 
   -- lookup already run migrations
+  conn <- connectPostgreSQL "dbname=howston"
+  r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
+  db <- execute_ conn "CREATE TABLE"
 
   -- compare the two and run them
 
