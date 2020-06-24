@@ -6,6 +6,7 @@ import Text.Parser.Char
 import Text.Parser.Combinators
 import System.Directory
 import Data.List
+import Control.Monad
 
 type Up = String
 type Down = String
@@ -21,7 +22,7 @@ data Migration = Migration
 instance Ord Migration where
   a `compare` b = (number a) `compare` (number b)
 
-toMigration :: String -> Migration
+toMigration :: FilePath -> Migration
 toMigration string = Migration
   { number = takeWhile (not . (== '_')) string
   , name = string
@@ -29,6 +30,9 @@ toMigration string = Migration
 
 toMigrations :: [FilePath] -> [Migration]
 toMigrations = sort . fmap toMigration
+
+toAbsolutes :: [FilePath] -> IO [FilePath]
+toAbsolutes = mapM (makeAbsolute . (\s -> "./migrations/" <> s))
 
 getSQLStatements :: Parser (Up, Down)
 getSQLStatements = do
@@ -54,7 +58,8 @@ readMigrations = mapM readMigration
 
 main = do
   -- collect migrations
-  migrations <- toMigrations <$> filterDirs <$> listDirectory "./migrations"
+  fileNames <- toAbsolutes =<< listDirectory "./migrations"
+  let migrations = toMigrations $ filterDirs fileNames
 
   -- read migrations
   readMigrations <- readMigrations migrations
@@ -66,4 +71,4 @@ main = do
 
   -- compare the two and run them
 
-  pure migrations
+  pure $ show $ parsedMigrations
