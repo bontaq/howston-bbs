@@ -41,8 +41,8 @@ toAbsolutes = mapM (makeAbsolute . (\s -> "./migrations/" <> s))
 
 getSQLStatements :: Parser (Up, Down)
 getSQLStatements = do
-  _ <- string "> up"
-  up <- manyTill anyChar (try $ string "< down")
+  _    <- manyTill anyChar (try $ string "> up")
+  up   <- manyTill anyChar (try $ string "< down")
   down <- manyTill anyChar eof
   pure (up, down)
 
@@ -51,12 +51,7 @@ parseMigrations migrations =
       sequence $ fmap (parseString getSQLStatements mempty) migrations
 
 readMigration :: Migration -> IO String
-readMigration migration =
-  let
-    fileName = name migration
-  in
-    do
-      readFile fileName
+readMigration migration = readFile (name migration)
 
 readMigrations :: [Migration] -> IO [String]
 readMigrations = mapM readMigration
