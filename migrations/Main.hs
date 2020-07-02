@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Main where
 
 import GHC.Generics
@@ -12,6 +14,7 @@ import System.Directory
 import Data.List
 import Control.Monad
 import Database.PostgreSQL.Simple
+import Text.RawString.QQ (r)
 
 type Up = String
 type Down = String
@@ -51,14 +54,26 @@ parseMigrations migrations =
       sequence $ fmap (parseString getSQLStatements mempty) migrations
 
 readMigration :: Migration -> IO String
-readMigration migration = readFile (name migration)
+readMigration migration = readFile (name (migration :: Migration))
 
 readMigrations :: [Migration] -> IO [String]
 readMigrations = mapM readMigration
 
 data MigrationRow = MigrationRow {
   id :: String
+  , name :: String
   } deriving (Show, Generic, FromRow)
+
+setupMigrationTable :: Connection -> IO ()
+setupMigrationTable conn = do
+  execute_ conn [r|
+                  CREATE TABLE IF NOT EXISTS migrations (
+                    id serial PRIMARY KEY,
+                    name VARCHAR (200) UNIQUE NOT NULL,
+                    ran BOOLEAN
+                  );
+                  |]
+  pure ()
 
 main = do
   -- collect migrations
@@ -70,11 +85,14 @@ main = do
 
   -- parse migrations
   let parsedMigrations = parseMigrations readMigrations
+  print parsedMigrations
 
   -- lookup already run migrations
   conn <- connectPostgreSQL "dbname=howston"
+  setupMigrationTable conn
+
   r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
-  db <- execute_ conn "CREATE TABLE"
+  print r
 
   -- compare the two and run them
 

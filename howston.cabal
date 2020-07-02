@@ -81,6 +81,8 @@ executable howston-migrate
     , trifecta
     , parsers
     , directory
+    , raw-strings-qq
+    , postgresql-simple
   default-language: Haskell2010
 
 test-suite howston-test
