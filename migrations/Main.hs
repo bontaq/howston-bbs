@@ -62,17 +62,26 @@ readMigrations = mapM readMigration
 data MigrationRow = MigrationRow {
   id :: String
   , name :: String
+  , ran :: Bool
   } deriving (Show, Generic, FromRow)
 
 setupMigrationTable :: Connection -> IO ()
 setupMigrationTable conn = do
   execute_ conn [r|
                   CREATE TABLE IF NOT EXISTS migrations (
-                    id serial PRIMARY KEY,
+                    id SERIAL PRIMARY KEY,
                     name VARCHAR (200) UNIQUE NOT NULL,
                     ran BOOLEAN
                   );
                   |]
+  pure ()
+
+testInsert :: Connection -> IO ()
+testInsert conn = do
+  execute
+    conn
+    "INSERT INTO migrations (name, ran) VALUES (?, ?)"
+    ("babbies second run" :: String, False :: Bool)
   pure ()
 
 main = do
@@ -90,6 +99,8 @@ main = do
   -- lookup already run migrations
   conn <- connectPostgreSQL "dbname=howston"
   setupMigrationTable conn
+
+  testInsert conn
 
   r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
   print r
