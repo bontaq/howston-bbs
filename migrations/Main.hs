@@ -60,7 +60,7 @@ readMigrations :: [Migration] -> IO [String]
 readMigrations = mapM readMigration
 
 data MigrationRow = MigrationRow {
-  id :: String
+  id :: Integer
   , name :: String
   , ran :: Bool
   } deriving (Show, Generic, FromRow)
@@ -81,7 +81,7 @@ testInsert conn = do
   execute
     conn
     "INSERT INTO migrations (name, ran) VALUES (?, ?)"
-    ("babbies second run" :: String, False :: Bool)
+    ("babbies first run" :: String, False :: Bool)
   pure ()
 
 main = do
@@ -101,6 +101,8 @@ main = do
   setupMigrationTable conn
 
   testInsert conn
+
+  print "hello"
 
   r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
   print r
