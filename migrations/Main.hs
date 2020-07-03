@@ -39,8 +39,8 @@ toMigration string = Migration
 toMigrations :: [FilePath] -> [Migration]
 toMigrations = sort . fmap toMigration
 
-toAbsolutes :: [FilePath] -> IO [FilePath]
-toAbsolutes = mapM (makeAbsolute . (\s -> "./migrations/" <> s))
+toAbsolutes :: [FilePath] -> [FilePath]
+toAbsolutes = fmap (\s -> "./migrations/" <> s)
 
 getSQLStatements :: Parser (Up, Down)
 getSQLStatements = do
@@ -86,7 +86,7 @@ testInsert conn = do
 
 main = do
   -- collect migrations
-  fileNames <- toAbsolutes =<< listDirectory "./migrations"
+  fileNames <- toAbsolutes <$> listDirectory "./migrations"
   let migrations = toMigrations $ filterDirs fileNames
 
   -- read migrations
