@@ -93,14 +93,6 @@ setupMigrationTable conn = do
                   |]
   pure ()
 
-testInsert :: Connection -> IO ()
-testInsert conn = do
-  execute
-    conn
-    "INSERT INTO migrations (name, ran) VALUES (?, ?)"
-    ("babbies first run" :: String, False :: Bool)
-  pure ()
-
 getAllMigrations :: Connection -> IO [MigrationRow]
 getAllMigrations conn =
   query_ conn "SELECT * FROM migrations"
