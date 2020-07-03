@@ -132,8 +132,16 @@ runMigration conn migrations toRun =
       Just match ->
         let
           (_, (up, _)) = match
+          toUpdate = (\(m, _) -> #name m) match
         in do
+          -- run migration!
           execute_ conn (fromString up)
+          -- update it as ran
+          execute
+            conn
+            "UPDATE migrations SET ran = True WHERE name = (?)"
+            ([toUpdate])
+
           pure ()
       Nothing -> error $ "could not find migration: " <> show toRun
 
