@@ -105,14 +105,14 @@ getAllMigrations :: Connection -> IO [MigrationRow]
 getAllMigrations conn =
   query_ conn "SELECT * FROM migrations"
 
-findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [(Migration, (Up, Down))]
+findNewMigrations :: [MigrationRow] -> [(Migration, (Up, Down))] -> [(Migration, (Up, Down))]
 findNewMigrations existingMigrations allMigrations =
   let
     existingNames = fmap #name existingMigrations
   in
     filter (\(m, _) -> not $ (#name m) `elem` existingNames) allMigrations
 
-insertNewMigrations :: Connection -> [(Migration, (String, String))] -> IO ()
+insertNewMigrations :: Connection -> [(Migration, (Up, Down))] -> IO ()
 insertNewMigrations conn migrations =
   let
     names = fmap (\(m, _) -> #name m) migrations
@@ -124,7 +124,7 @@ insertNewMigrations conn migrations =
      (toInsert :: [(String, Bool)])
     pure ()
 
-runMigration :: Connection -> [(Migration, (String, String))] -> MigrationRow -> IO ()
+runMigration :: Connection -> [(Migration, (Up, Down))] -> MigrationRow -> IO ()
 runMigration conn migrations toRun =
   let
     match = find (\(m, _) -> (#name toRun) == (#name m)) migrations
@@ -145,7 +145,7 @@ runMigration conn migrations toRun =
           pure ()
       Nothing -> error $ "could not find migration: " <> show toRun
 
-runMigrations :: Connection -> [(Migration, (String, String))] -> IO ()
+runMigrations :: Connection -> [(Migration, (Up, Down))] -> IO ()
 runMigrations conn migrations = do
   toRun <- query_ conn "SELECT * FROM migrations WHERE ran = False" :: IO [MigrationRow]
   mapM_ (runMigration conn migrations) toRun
