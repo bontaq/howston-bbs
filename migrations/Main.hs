@@ -39,8 +39,8 @@ toMigration string = Migration
 toMigrations :: [FilePath] -> [Migration]
 toMigrations = sort . fmap toMigration
 
-toAbsolutes :: [FilePath] -> [FilePath]
-toAbsolutes = fmap (\s -> "./migrations/" <> s)
+toLocations :: [FilePath] -> [FilePath]
+toLocations = fmap (\s -> "./migrations/" <> s)
 
 getSQLStatements :: Parser (Up, Down)
 getSQLStatements = do
@@ -84,28 +84,43 @@ testInsert conn = do
     ("babbies first run" :: String, False :: Bool)
   pure ()
 
+getRanMigrations :: Connection -> IO [MigrationRow]
+getRanMigrations conn =
+  query_ conn "SELECT * FROM migrations"
+
+findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [Migration]
+findNewMigrations = undefined
+
 main = do
   -- collect migrations
-  fileNames <- toAbsolutes <$> listDirectory "./migrations"
+  fileNames <- toLocations <$> listDirectory "./migrations"
   let migrations = toMigrations $ filterDirs fileNames
 
   -- read migrations
   readMigrations <- readMigrations migrations
-
   -- parse migrations
-  let parsedMigrations = parseMigrations readMigrations
-  print parsedMigrations
+  let parsedMigrations = case parseMigrations readMigrations of
+        Success a -> a
+        Failure x -> error $ show x
+      migrationsWithName = zip migrations parsedMigrations
 
-  -- lookup already run migrations
   conn <- connectPostgreSQL "dbname=howston"
+
   setupMigrationTable conn
 
-  testInsert conn
+  existingMigrations <- getRanMigrations conn
 
-  print "hello"
+  -- filter out existing migrations
+  let newMigrations = findNewMigrations existingMigrations migrationsWithName
 
-  r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
-  print r
+  -- insert new migrations
+
+  -- run migrations
+
+  -- print =<< getRanMigrations conn
+
+  -- r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
+  -- print r
 
   -- compare the two and run them
 
