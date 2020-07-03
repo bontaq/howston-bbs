@@ -50,6 +50,14 @@ runLoginUser username password = do
     . runPersistAsPostgres
     $ checkUser username
 
+runRegisterUser :: String -> String -> IO [User]
+runRegisterUser username password = do
+  conn <- connectPostgreSQL "dbname=howston"
+  runM
+    . runInputConst conn
+    . runPersistAsPostgres
+    $ checkUser username
+
 main = do
   putStrLn "Firing up server"
 
@@ -63,4 +71,5 @@ main = do
     post "/register" $ do
       registerRequest <- jsonData :: ActionM Lib.LoginRequest
       liftIO $ putStrLn $ "Register: " <> show registerRequest
+      liftIO $ putStrLn . show =<< runRegisterUser "" ""
       json registerRequest
