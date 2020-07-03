@@ -25,6 +25,7 @@ import Text.Parser.Char
 import Text.Parser.Combinators
 import System.Directory
 import Data.List
+import Data.String (fromString)
 import Control.Monad
 import Database.PostgreSQL.Simple
 import Text.RawString.QQ (r)
@@ -100,8 +101,8 @@ testInsert conn = do
     ("babbies first run" :: String, False :: Bool)
   pure ()
 
-getRanMigrations :: Connection -> IO [MigrationRow]
-getRanMigrations conn =
+getAllMigrations :: Connection -> IO [MigrationRow]
+getAllMigrations conn =
   query_ conn "SELECT * FROM migrations"
 
 findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [(Migration, (Up, Down))]
@@ -123,6 +124,24 @@ insertNewMigrations conn migrations =
      (toInsert :: [(String, Bool)])
     pure ()
 
+runMigration :: Connection -> [(Migration, (String, String))] -> MigrationRow -> IO ()
+runMigration conn migrations toRun =
+  let
+    match = find (\(m, _) -> (#name toRun) == (#name m)) migrations
+  in case match of
+      Just match ->
+        let
+          (_, (up, _)) = match
+        in do
+          execute_ conn (fromString up)
+          pure ()
+      Nothing -> error $ "could not find migration: " <> show toRun
+
+runMigrations :: Connection -> [(Migration, (String, String))] -> IO ()
+runMigrations conn migrations = do
+  toRun <- query_ conn "SELECT * FROM migrations WHERE ran = False" :: IO [MigrationRow]
+  mapM_ (runMigration conn migrations) toRun
+
 main = do
   -- collect migrations
   fileNames <- toLocations <$> listDirectory "./migrations"
@@ -140,7 +159,7 @@ main = do
 
   setupMigrationTable conn
 
-  existingMigrations <- getRanMigrations conn
+  existingMigrations <- getAllMigrations conn
 
   -- filter out existing migrations
   let newMigrations = findNewMigrations existingMigrations migrationsWithName
@@ -149,12 +168,6 @@ main = do
   insertNewMigrations conn newMigrations
 
   -- run migrations
+  runMigrations conn migrationsWithName
 
-  -- print =<< getRanMigrations conn
-
-  -- r <- query_ conn "SELECT * FROM migrations" :: IO [MigrationRow]
-  -- print r
-
-  -- compare the two and run them
-
-  pure $ show $ parsedMigrations
+  print "Success"
