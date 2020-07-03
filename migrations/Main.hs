@@ -104,11 +104,12 @@ getRanMigrations :: Connection -> IO [MigrationRow]
 getRanMigrations conn =
   query_ conn "SELECT * FROM migrations"
 
-findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [Migration]
+findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [(Migration, (Up, Down))]
 findNewMigrations existingMigrations allMigrations =
-  let existingNames = fmap #name existingMigrations
+  let
+    existingNames = fmap #name existingMigrations
   in
-    undefined
+    filter (\(m, _) -> not $ (#name m) `elem` existingNames) allMigrations
 
 main = do
   -- collect migrations
