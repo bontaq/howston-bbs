@@ -1,11 +1,24 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedLabels #-}
 module Main where
 
 import GHC.Generics
+import GHC.Records
+import GHC.OverloadedLabels (IsLabel(..))
+import GHC.TypeLits (Symbol)
+
 import Text.Trifecta.Parser
 import Text.Trifecta.Result
 import Text.Parser.Char
@@ -15,6 +28,9 @@ import Data.List
 import Control.Monad
 import Database.PostgreSQL.Simple
 import Text.RawString.QQ (r)
+
+instance forall x r a. HasField x r a => IsLabel x (r -> a) where
+  fromLabel r = getField @x r
 
 type Up = String
 type Down = String
@@ -54,7 +70,7 @@ parseMigrations migrations =
       sequence $ fmap (parseString getSQLStatements mempty) migrations
 
 readMigration :: Migration -> IO String
-readMigration migration = readFile (name (migration :: Migration))
+readMigration migration = readFile (#name migration)
 
 readMigrations :: [Migration] -> IO [String]
 readMigrations = mapM readMigration
@@ -89,7 +105,10 @@ getRanMigrations conn =
   query_ conn "SELECT * FROM migrations"
 
 findNewMigrations :: [MigrationRow] -> [(Migration, (String, String))] -> [Migration]
-findNewMigrations = undefined
+findNewMigrations existingMigrations allMigrations =
+  let existingNames = fmap #name existingMigrations
+  in
+    undefined
 
 main = do
   -- collect migrations
