@@ -111,6 +111,18 @@ findNewMigrations existingMigrations allMigrations =
   in
     filter (\(m, _) -> not $ (#name m) `elem` existingNames) allMigrations
 
+insertNewMigrations :: Connection -> [(Migration, (String, String))] -> IO ()
+insertNewMigrations conn migrations =
+  let
+    names = fmap (\(m, _) -> #name m) migrations
+    toInsert = zip names (repeat False)
+  in do
+    executeMany
+      conn
+     "INSERT INTO migrations (name, ran) VALUES (?, ?)"
+     (toInsert :: [(String, Bool)])
+    pure ()
+
 main = do
   -- collect migrations
   fileNames <- toLocations <$> listDirectory "./migrations"
@@ -134,6 +146,7 @@ main = do
   let newMigrations = findNewMigrations existingMigrations migrationsWithName
 
   -- insert new migrations
+  insertNewMigrations conn newMigrations
 
   -- run migrations
 
