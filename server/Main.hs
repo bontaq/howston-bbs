@@ -24,7 +24,7 @@ data User = User {
 
 data Persist m a where
   GetUser :: String -> Persist m [User]
-  SaveUser :: User -> Persist m ()
+  CreateUser :: User -> Persist m ()
 
 makeSem ''Persist
 
@@ -39,8 +39,14 @@ runPersistAsPostgres = reinterpret $ \case
     conn <- input
     result <- embed
       (query conn
-       "SELECT * FROM users WHERE username = ?" (Only username) :: IO [User])
+       "SELECT * FROM users WHERE name = ?" (Only username) :: IO [User])
     return result
+  CreateUser (User username password) -> do
+    conn <- input
+    result <- embed
+      (execute conn
+       "INSERT INTO users (name, password) VALUES (?, ?)" (username, password))
+    return ()
 
 runLoginUser :: String -> String -> IO [User]
 runLoginUser username password = do
@@ -50,13 +56,13 @@ runLoginUser username password = do
     . runPersistAsPostgres
     $ checkUser username
 
-runRegisterUser :: String -> String -> IO [User]
+runRegisterUser :: String -> String -> IO ()
 runRegisterUser username password = do
   conn <- connectPostgreSQL "dbname=howston"
   runM
     . runInputConst conn
     . runPersistAsPostgres
-    $ checkUser username
+    $ createUser $ User username password
 
 main = do
   putStrLn "Firing up server"
